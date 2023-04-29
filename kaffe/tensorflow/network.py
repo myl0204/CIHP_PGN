@@ -42,7 +42,7 @@ class Network(object):
         # If true, the resulting variables are set as trainable
         self.trainable = trainable
         # Switch variable for dropout
-        self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
+        self.use_dropout = tf.compat.v1.placeholder_with_default(tf.constant(1.0),
                                                        shape=[],
                                                        name='use_dropout')
         self.setup(is_training, n_classes, keep_prob)
@@ -59,10 +59,10 @@ class Network(object):
         '''
         data_dict = np.load(data_path).item()
         for op_name in data_dict:
-            with tf.variable_scope(op_name, reuse=True):
+            with tf.compat.v1.variable_scope(op_name, reuse=True):
                 for param_name, data in data_dict[op_name].iteritems():
                     try:
-                        var = tf.get_variable(param_name)
+                        var = tf.compat.v1.get_variable(param_name)
                         session.run(var.assign(data))
                     except ValueError:
                         if not ignore_missing:
@@ -96,15 +96,15 @@ class Network(object):
 
     def make_var(self, name, shape):
         '''Creates a new TensorFlow variable.'''
-        return tf.get_variable(name, shape, trainable=self.trainable)
+        return tf.compat.v1.get_variable(name, shape, trainable=self.trainable)
 
     def make_w_var(self, name, shape):
         '''Creates a new TensorFlow variable.'''
         stddev=0.01
-        return tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev), trainable=self.trainable)
+        return tf.compat.v1.get_variable(name, shape, initializer=tf.compat.v1.truncated_normal_initializer(stddev=stddev), trainable=self.trainable)
 
     def make_b_var(self, name, shape):
-        return tf.get_variable(name, shape, initializer=tf.constant_initializer(0.0), trainable=self.trainable)
+        return tf.compat.v1.get_variable(name, shape, initializer=tf.constant_initializer(0.0), trainable=self.trainable)
 
     def validate_padding(self, padding):
         '''Verifies that the padding is one of the supported ones.'''
@@ -132,7 +132,7 @@ class Network(object):
         assert c_o % group == 0
         # Convolution for a given input and kernel
         convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding)
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             kernel = self.make_w_var('weights', shape=[k_h, k_w, c_i // group, c_o])
             if group == 1:
                 # This is the common-case. Convolve the input without any further complications.
@@ -174,7 +174,7 @@ class Network(object):
         assert c_o % group == 0
         # Convolution for a given input and kernel
         convolve = lambda i, k: tf.nn.atrous_conv2d(i, k, dilation, padding=padding)
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             kernel = self.make_w_var('weights', shape=[k_h, k_w, c_i // group, c_o])
             if group == 1:
                 # This is the common-case. Convolve the input without any further complications.
@@ -236,7 +236,7 @@ class Network(object):
 
     @layer
     def fc(self, input, num_out, name, relu=True):
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             input_shape = input.get_shape()
             if input_shape.ndims == 4:
                 # The input is spatial. Vectorize it first.
@@ -267,7 +267,7 @@ class Network(object):
         
     @layer
     def batch_normalization(self, input, name, is_training, activation_fn=None, scale=True):
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             output = slim.batch_norm(
                 input,
                 activation_fn=activation_fn,
@@ -284,12 +284,12 @@ class Network(object):
 
     @layer
     def upsample(self, input, size_h, size_w, name):
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             return tf.image.resize_images(input, size=[size_h, size_w])
 
     @layer
     def pyramid_pooling(self, input, o_c, pool_size, name):
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             dims = tf.shape(input)
             out_height, out_width = dims[1], dims[2]
             pool_ly = tf.nn.avg_pool(input, ksize=[1, pool_size, pool_size, 1], strides=[1, pool_size, pool_size, 1],
