@@ -190,7 +190,7 @@ def read_images_from_disk(input_queue, input_size, random_scale,
       Two tensors: the decoded image and its mask.
     """
 
-    img_contents = tf.read_file(input_queue[0])
+    img_contents = tf.io.read_file(input_queue[0])
     # label_contents = tf.read_file(input_queue[1])
     # edge_contents = tf.read_file(input_queue[2])
 
@@ -250,10 +250,17 @@ class ImageReader(object):
         self.images = tf.convert_to_tensor(self.image_list, dtype=tf.string)
         # self.labels = tf.convert_to_tensor(self.label_list, dtype=tf.string)
         # self.edges = tf.convert_to_tensor(self.edge_list, dtype=tf.string)
-        self.queue = tf.compat.v1.train.slice_input_producer([self.images],
+        print(self.images)
+        if shuffle:
+          self.queue = tf.data.Dataset.from_tensor_slices([self.images])
+        else:
+          self.queue = tf.data.Dataset.from_tensor_slices([self.images])
+        #self.queue = tf.compat.v1.train.slice_input_producer([self.images],
                                                               # self.labels,
                                                               # self.edges],
-                                                             shuffle=shuffle)
+              #                                               shuffle=shuffle)
+        # for
+        self.queue = list(self.queue.as_numpy_iterator())[0]
         print(self.queue)
         self.image = read_images_from_disk(self.queue, self.input_size,
                                                                   random_scale,
